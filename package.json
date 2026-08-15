@@ -1,0 +1,15 @@
+{
+  "name": "24pilot-deviation",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Unofficial ATC24 Possible Pilot Deviation reporting portal",
+  "scripts": {
+    "check": "node --check js/app.js && node --check api/aircraft.js && node --check api/reports/create.js && node --check api/reports/lookup.js && node --check api/reports/respond.js && node --check api/public/reports.js && node --check lib/sheets.js && node --check lib/security.js"
+  },
+  "dependencies": {
+    "googleapis": "^144.0.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
