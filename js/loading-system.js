@@ -6,11 +6,16 @@
   const activeSectionRequests = new Map();
   const activeBootRequests = new Set();
   const bootStartedAt = performance.now();
-  const PAGE_MIN_MS = 650;
-  const SECTION_MIN_MS = 450;
-  const BOOT_MIN_MS = 900;
+
+  // Keep loaders perceptible without making the app feel artificially slow.
+  const PAGE_MIN_MS = 90;
+  const SECTION_MIN_MS = 75;
+  const BOOT_MIN_MS = 140;
+  const REPORT_ENTRY_DEDUPE_MS = 15000;
+
   let pageOverlay = null;
   let pageOverlayStartedAt = 0;
+  let lastPublicReportsRequestAt = 0;
 
   function currentRoute() {
     return String(location.hash || '#respond').replace(/^#/, '').toLowerCase();
@@ -28,11 +33,20 @@
     return String(init?.method || input?.method || 'GET').toUpperCase();
   }
 
+  function isSilentRequest(input, init) {
+    try {
+      const headers = new Headers(init?.headers || input?.headers || {});
+      return headers.get('X-24PD-Silent') === '1';
+    } catch (_) {
+      return false;
+    }
+  }
+
   function classifyRequest(input, init) {
     const url = requestUrl(input);
     if (!url || url.origin !== location.origin) return null;
     const method = requestMethod(input, init);
-    if (method !== 'GET') return null;
+    if (method !== 'GET' || isSilentRequest(input, init)) return null;
 
     const path = url.pathname;
     const action = url.searchParams.get('action') || '';
@@ -42,13 +56,14 @@
       return { mode:'boot', label:'Connecting to 24PD services' };
     }
     if (path === '/api/public/reports') {
+      lastPublicReportsRequestAt = Date.now();
       return { mode:'page', boot:true, label:'Loading public reports', detail:'Retrieving the latest public 24PD cases.' };
     }
     if (path === '/api/public/report') {
       return { mode:'page', label:'Loading case dossier', detail:'Retrieving case statements, evidence, and community data.' };
     }
     if (path === '/api/community' && action === 'stats') {
-      return { mode:'page', label:'Loading community statistics', detail:'Calculating current public activity and leaderboard totals.' };
+      return { mode:'page', label:'Loading community statistics', detail:'Retrieving current community activity.' };
     }
     if (path === '/api/community' && action === 'profile') {
       return { mode:'page', label:'Loading your profile', detail:'Retrieving your Discord-backed 24PD account data.' };
@@ -108,7 +123,7 @@
       pageOverlay.classList.add('is-leaving');
       setTimeout(function () {
         if (!activePageRequests.size && pageOverlay?.isConnected) pageOverlay.remove();
-      }, 180);
+      }, 90);
     }, wait);
   }
 
@@ -145,7 +160,7 @@
     setTimeout(function () {
       if (entry.node.isConnected) {
         entry.node.classList.add('is-leaving');
-        setTimeout(function () { if (entry.node.isConnected) entry.node.remove(); }, 150);
+        setTimeout(function () { if (entry.node.isConnected) entry.node.remove(); }, 80);
       }
     }, wait);
   }
@@ -215,9 +230,7 @@
 
   function rerunCurrentRoute(button, loadingText) {
     window.PPDUI?.setButtonLoading?.(button, loadingText || 'REFRESHING…');
-    setTimeout(function () {
-      window.dispatchEvent(new HashChangeEvent('hashchange'));
-    }, 30);
+    window.dispatchEvent(new HashChangeEvent('hashchange'));
   }
 
   function ensureRouteButtons() {
@@ -225,8 +238,8 @@
     if (route === 'reports') {
       addRefreshButton('reports-refresh', 'REFRESH REPORTS', function (button) {
         window.PPDUI?.setButtonLoading?.(button, 'REFRESHING…');
-        Promise.resolve(window.loadPublicReports?.()).finally(function () {
-          setTimeout(function () { window.PPDUI?.restoreButton?.(button); }, PAGE_MIN_MS);
+        Promise.resolve(window.loadPublicReports?.({ force:true })).finally(function () {
+          window.PPDUI?.restoreButton?.(button);
         });
       });
       return;
@@ -250,6 +263,7 @@
 
   function refreshReportsWhenEntered() {
     if (currentRoute() !== 'reports') return;
+    if (Date.now() - lastPublicReportsRequestAt < REPORT_ENTRY_DEDUPE_MS) return;
     setTimeout(function () {
       if (typeof window.loadPublicReports === 'function') window.loadPublicReports();
     }, 0);
@@ -265,7 +279,7 @@
     boot.dataset.dismissed = '1';
     setTimeout(function () {
       boot.classList.add('is-ready');
-      setTimeout(function () { if (boot.isConnected) boot.remove(); }, 260);
+      setTimeout(function () { if (boot.isConnected) boot.remove(); }, 100);
     }, wait);
   }
 
@@ -294,9 +308,9 @@
     if (boot && boot.dataset.dismissed !== '1') {
       boot.dataset.dismissed = '1';
       boot.classList.add('is-ready');
-      setTimeout(function () { if (boot.isConnected) boot.remove(); }, 260);
+      setTimeout(function () { if (boot.isConnected) boot.remove(); }, 100);
     }
-  }, 12000);
+  }, 5000);
 
   ensureRouteButtons();
   maybeDismissBootLoader();
