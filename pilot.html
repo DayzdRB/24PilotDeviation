@@ -30,8 +30,18 @@
   <link rel="stylesheet" href="/css/public-case.css" />
   <link rel="stylesheet" href="/css/feature-update.css" />
   <link rel="stylesheet" href="/css/components.css" />
+  <link rel="stylesheet" href="/css/loading-system.css" />
 </head>
 <body>
+  <div id="site-boot-loader" class="site-boot-loader" role="status" aria-live="polite">
+    <div class="site-boot-loader__inner">
+      <div class="site-boot-loader__brand"><span class="site-boot-loader__mark">24</span><span><strong>24Pilot Deviation</strong><small>ATC24 community reporting</small></span></div>
+      <div class="site-boot-loader__radar" aria-hidden="true"></div>
+      <h1>Initializing 24PD</h1>
+      <p>Connecting to reports, account data, and live services</p>
+    </div>
+  </div>
+
   <div class="app-shell">
     <header class="topbar">
       <a class="brand" href="#respond" aria-label="24Pilot Deviation home"><span class="brand-mark">24</span><span><strong>24Pilot Deviation</strong><small>ATC24 Pilot Deviation Reporting</small></span></a>
@@ -54,5 +64,6 @@
   <script src="/js/public-case.js" defer></script>
   <script src="/js/auth.js" defer></script>
   <script src="/js/community.js" defer></script>
+  <script src="/js/loading-system.js" defer></script>
 </body>
 </html>
