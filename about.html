@@ -33,7 +33,7 @@
         </div>
       </div>
       <figure class="hero-logo-wrap">
-        <img src="/assets/ppa-logo.webp" alt="Putin Princess Airlines logo and tail artwork" />
+        <img class="ppa-image" data-image-payload="/assets/ppa-logo.b64" alt="Putin Princess Airlines logo and tail artwork" />
         <figcaption>Official company identity. Very expensive probably.</figcaption>
       </figure>
     </section>
@@ -76,7 +76,7 @@
       </article>
 
       <figure class="fleet-photo">
-        <img src="/assets/ppa-aircraft.webp" alt="Putin Princess Airlines aircraft in white, navy, burgundy, and gold livery" loading="lazy" />
+        <img class="ppa-image" data-image-payload="/assets/ppa-aircraft.b64" alt="Putin Princess Airlines aircraft in white, navy, burgundy, and gold livery" loading="lazy" />
         <figcaption><span>AIRPORT GARAGE FILE</span> One of company aeroplane, looking extremely legal.</figcaption>
       </figure>
     </section>
@@ -117,6 +117,24 @@
 
   <script>
     (function () {
+      async function loadLocalImage(img) {
+        const url = img.dataset.imagePayload;
+        if (!url) return;
+        try {
+          const response = await fetch(url, { cache: 'force-cache' });
+          if (!response.ok) throw new Error('image payload unavailable');
+          const payload = (await response.text()).trim();
+          if (!payload.startsWith('UklG')) throw new Error('invalid image payload');
+          img.src = 'data:image/webp;base64,' + payload;
+          img.classList.add('is-ready');
+        } catch (error) {
+          img.classList.add('is-error');
+          img.alt += ' — image unavailable';
+        }
+      }
+
+      document.querySelectorAll('img[data-image-payload]').forEach(loadLocalImage);
+
       const destination = document.getElementById('ppa-destination');
       const copy = document.getElementById('destination-copy');
       const result = document.getElementById('booking-result');
