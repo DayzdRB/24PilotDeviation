@@ -1,6 +1,12 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "cleanUrls": true,
+  "rewrites": [
+    { "source": "/api/auth/discord/callback", "destination": "/api/auth?action=callback" },
+    { "source": "/api/auth/discord", "destination": "/api/auth?action=login" },
+    { "source": "/api/auth/me", "destination": "/api/auth?action=me" },
+    { "source": "/api/auth/logout", "destination": "/api/auth?action=logout" }
+  ],
   "headers": [
     {
       "source": "/api/(.*)",
