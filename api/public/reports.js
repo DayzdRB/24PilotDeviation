@@ -18,8 +18,11 @@ module.exports = async function handler(req, res) {
       status:r.Status,
       disposition:r.Disposition,
       summary:r.Summary,
-      publishedAt:r.PublishedAt
+      publishedAt:r.PublishedAt,
+      votes:r.Votes || { atc:0, pilot:0, inconclusive:0, total:0 },
+      communityVerdict:r.CommunityVerdict || { leader:'NO VOTES', percentage:0 }
     }));
+    res.setHeader('Cache-Control', 'no-store');
     return res.status(200).json({ ok:true, reports });
   } catch (error) {
     console.error(error);
