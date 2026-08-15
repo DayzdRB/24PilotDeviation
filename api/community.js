@@ -56,6 +56,9 @@ async function handleGet(req, res, action) {
 
   if (action === 'stats') {
     const data = await get('communityStats', {}, true);
+    // Public aggregate data can be cached briefly at the edge. This avoids an
+    // Apps Script round-trip every time someone opens Community.
+    res.setHeader('Cache-Control', 'public, s-maxage=30, stale-while-revalidate=120');
     return res.status(200).json({ ok:true, stats:data.stats || {} });
   }
 
