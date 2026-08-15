@@ -1,10 +1,10 @@
 {
   "name": "24pilot-deviation",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "private": true,
   "description": "Unofficial ATC24 Possible Pilot Deviation reporting portal",
   "scripts": {
-    "check": "node --check js/app.js && node --check js/ui-components.js && node --check js/phone-ui.js && node --check js/phone-audio.js && node --check js/public-case.js && node --check js/auth.js && node --check js/community.js && node --check api/aircraft.js && node --check api/auth.js && node --check api/community.js && node --check api/og-dialer.js && node --check api/reports/create.js && node --check api/reports/lookup.js && node --check api/reports/respond.js && node --check api/public/reports.js && node --check api/public/report.js && node --check api/public/vote.js && node --check lib/apps-script.js && node --check lib/auth.js && node --check lib/security.js"
+    "check": "node --check js/app.js && node --check js/ui-components.js && node --check js/loading-system.js && node --check js/phone-ui.js && node --check js/phone-audio.js && node --check js/public-case.js && node --check js/auth.js && node --check js/community.js && node --check api/aircraft.js && node --check api/auth.js && node --check api/community.js && node --check api/og-dialer.js && node --check api/reports/create.js && node --check api/reports/lookup.js && node --check api/reports/respond.js && node --check api/public/reports.js && node --check api/public/report.js && node --check api/public/vote.js && node --check lib/apps-script.js && node --check lib/auth.js && node --check lib/security.js"
   },
   "dependencies": {
     "googleapis": "^144.0.0"
