@@ -3,14 +3,31 @@
 (function () {
   const state = window.authState = { loaded:false, configured:false, loggedIn:false, user:null };
   const originalRenderFile = window.renderFile;
+  const DISCORD_ICON_URL = '/assets/discord-login-icon.svg';
 
   function currentReturnTo() {
     return String(location.hash || '#respond');
   }
 
+  function discordIconMarkup() {
+    return '<img class="discord-login-icon" src="' + DISCORD_ICON_URL + '" alt="" aria-hidden="true">';
+  }
+
   function discordButton(id, extraClass) {
-    if (window.PPDUI?.discordButtonHTML) return window.PPDUI.discordButtonHTML(id, extraClass || '');
-    return '<button class="auth-login btn-discord ' + esc(extraClass || '') + '" id="' + esc(id) + '" type="button"><span class="discord-login-label">SIGN IN WITH DISCORD</span></button>';
+    return '<button class="auth-login btn-discord ' + esc(extraClass || '') + '" id="' + esc(id) + '" type="button"><span class="discord-login-label">SIGN IN WITH DISCORD</span>' + discordIconMarkup() + '</button>';
+  }
+
+  window.discordSignInButtonHTML = discordButton;
+
+  function decorateDiscordButtons(root) {
+    const scope = root && root.querySelectorAll ? root : document;
+    scope.querySelectorAll('button').forEach(function (button) {
+      const text = String(button.textContent || '').trim().toUpperCase();
+      if (text !== 'LOGIN WITH DISCORD' && text !== 'SIGN IN WITH DISCORD') return;
+      if (button.querySelector('.discord-login-icon')) return;
+      button.classList.add('btn-discord');
+      button.innerHTML = '<span class="discord-login-label">SIGN IN WITH DISCORD</span>' + discordIconMarkup();
+    });
   }
 
   function beginDiscordLogin(button, returnTo) {
@@ -125,6 +142,7 @@
         app.innerHTML = authGateMarkup();
         const login = document.getElementById('file-discord-login');
         if (login) login.onclick = function () { beginDiscordLogin(login, '#file'); };
+        decorateDiscordButtons(app);
         window.PPDUI?.enhance?.(app);
         return;
       }
@@ -163,12 +181,22 @@
     }
     renderAuthControls();
     rerenderProtectedRoute();
+    decorateDiscordButtons(document);
     window.dispatchEvent(new CustomEvent('24pd:auth', { detail:state }));
   }
 
   renderAuthControls();
   rerenderProtectedRoute();
   loadAuth();
+
+  const discordObserver = new MutationObserver(function (mutations) {
+    mutations.forEach(function (mutation) {
+      mutation.addedNodes.forEach(function (node) {
+        if (node.nodeType === 1) decorateDiscordButtons(node);
+      });
+    });
+  });
+  discordObserver.observe(document.documentElement, { childList:true, subtree:true });
 
   document.addEventListener('click', function (event) {
     const menu = document.getElementById('auth-menu');
