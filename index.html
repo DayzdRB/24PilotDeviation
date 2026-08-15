@@ -15,16 +15,14 @@
 <body>
   <div class="app-shell">
     <header class="topbar">
-      <a class="brand" href="#home" aria-label="24Pilot Deviation home">
+      <a class="brand" href="#respond" aria-label="24Pilot Deviation respond home">
         <span class="brand-mark">24</span>
         <span><strong>24Pilot Deviation</strong><small>ATC24 Pilot Deviation Reporting</small></span>
       </a>
       <button class="mobile-menu" id="mobile-menu" aria-label="Open navigation" aria-expanded="false">☰</button>
       <nav id="nav" class="nav-links" aria-label="Primary">
-        <a href="#home" data-route="home">Home</a>
-        <a href="#aircraft" data-route="aircraft">Live Aircraft</a>
-        <a href="#file" data-route="file">File PPD</a>
         <a href="#respond" data-route="respond">Respond</a>
+        <a href="#file" data-route="file">File Report</a>
         <a href="#reports" data-route="reports">Public Reports</a>
       </nav>
       <div class="system-status" id="system-status">
@@ -44,5 +42,6 @@
   <div id="toast-region" class="toast-region" aria-live="polite" aria-atomic="true"></div>
   <script src="/js/app.js" defer></script>
   <script src="/js/phone-ui.js" defer></script>
+  <script src="/js/site-routing.js" defer></script>
 </body>
 </html>
