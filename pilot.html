@@ -4,25 +4,22 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="theme-color" content="#0b1118" />
-  <title>Possible Pilot Deviation — Enter Your 24PD Number</title>
-  <meta name="description" content="ATC24 pilot: enter the 10-digit 24PD contact number given by ATC, verify the case details, then submit your response." />
-
+  <title>Possible Pilot Deviation — Respond to Your 24PD</title>
+  <meta name="description" content="Enter the 24PD number provided by ATC, review the report, and submit your response." />
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="24Pilot Deviation" />
-  <meta property="og:title" content="Possible Pilot Deviation — Enter Your 24PD Number" />
-  <meta property="og:description" content="Pilot instructions: open this page, enter the 10-digit 24PD number ATC gave you, verify the report, then submit your response." />
+  <meta property="og:title" content="Possible Pilot Deviation — Respond to Your 24PD" />
+  <meta property="og:description" content="Enter the 24PD number provided by ATC, review the report, and submit your response." />
   <meta property="og:url" content="https://24-pilot-deviation.vercel.app/pilot" />
   <meta property="og:image" content="https://24-pilot-deviation.vercel.app/api/og-dialer" />
   <meta property="og:image:type" content="image/png" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
-  <meta property="og:image:alt" content="24Pilot Deviation Home page showing the pilot response phone dial." />
-
+  <meta property="og:image:alt" content="24Pilot Deviation phone dial for entering a pilot response number." />
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="Possible Pilot Deviation — Enter Your 24PD Number" />
-  <meta name="twitter:description" content="Enter the 24PD number given by ATC, verify the report, and submit your response." />
+  <meta name="twitter:title" content="Possible Pilot Deviation — Respond to Your 24PD" />
+  <meta name="twitter:description" content="Enter the 24PD number provided by ATC, review the report, and submit your response." />
   <meta name="twitter:image" content="https://24-pilot-deviation.vercel.app/api/og-dialer" />
-
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -30,40 +27,30 @@
   <link rel="stylesheet" href="/css/phone-ui.css" />
   <link rel="stylesheet" href="/css/site-extras.css" />
   <link rel="stylesheet" href="/css/share-link.css" />
+  <link rel="stylesheet" href="/css/public-case.css" />
+  <link rel="stylesheet" href="/css/feature-update.css" />
 </head>
 <body>
   <div class="app-shell">
     <header class="topbar">
-      <a class="brand" href="#respond" aria-label="24Pilot Deviation home">
-        <span class="brand-mark">24</span>
-        <span><strong>24Pilot Deviation</strong><small>ATC24 Pilot Deviation Reporting</small></span>
-      </a>
+      <a class="brand" href="#respond" aria-label="24Pilot Deviation home"><span class="brand-mark">24</span><span><strong>24Pilot Deviation</strong><small>ATC24 Pilot Deviation Reporting</small></span></a>
       <button class="mobile-menu" id="mobile-menu" aria-label="Open navigation" aria-expanded="false">☰</button>
-      <nav id="nav" class="nav-links" aria-label="Primary">
-        <a href="#respond" data-route="respond">Home</a>
-        <a href="#file" data-route="file">File Report</a>
-        <a href="#reports" data-route="reports">Public Reports</a>
-        <a href="#howto" data-route="howto">How To</a>
-      </nav>
-      <div class="system-status" id="system-status">
-        <span class="status-dot connecting"></span>
-        <span><strong id="data-status">CONNECTING</strong><small id="last-update">24Data</small></span>
-      </div>
+      <nav id="nav" class="nav-links" aria-label="Primary"><a href="#respond" data-route="respond">Home</a><a href="#file" data-route="file">File Report</a><a href="#reports" data-route="reports">Public Reports</a><a href="#howto" data-route="howto">How To</a></nav>
+      <div class="system-status" id="system-status"><span class="status-dot connecting"></span><span><strong id="data-status">CONNECTING</strong><small id="last-update">24Data</small></span></div>
     </header>
-
     <main id="app" class="main-content" tabindex="-1"></main>
-
-    <footer class="footer">
-      <span>24Pilot Deviation</span>
-      <span>Unofficial community project — not affiliated with or operated by the FAA, Roblox, PTFS, or ATC24.</span>
-    </footer>
+    <footer class="footer"><span>24Pilot Deviation</span><span>Unofficial community project — not affiliated with or operated by the FAA, Roblox, PTFS, or ATC24.</span></footer>
   </div>
-
   <div id="toast-region" class="toast-region" aria-live="polite" aria-atomic="true"></div>
   <script>if(!location.hash) location.hash='respond';</script>
   <script src="/js/app.js" defer></script>
   <script src="/js/phone-ui.js" defer></script>
+  <script src="/js/phone-audio.js" defer></script>
   <script src="/js/site-routing.js" defer></script>
   <script src="/js/share-link.js" defer></script>
+  <script src="/js/incident-types.js" defer></script>
+  <script src="/js/public-case.js" defer></script>
+  <script src="/js/auth.js" defer></script>
+  <script src="/js/community.js" defer></script>
 </body>
 </html>
