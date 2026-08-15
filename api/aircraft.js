@@ -1,7 +1,7 @@
 'use strict';
 
 let cache = { at: 0, aircraft: [], source: 'none' };
-const CACHE_MS = 3000;
+const CACHE_MS = 10000;
 const MOCK = [
   { callsign:'Shamrock-1337', playerName:'SkylineEcho', aircraftType:'Airbus A330', altitude:30690, heading:290, speed:299, groundSpeed:209, isOnGround:false, isEmergencyOccuring:false, position:{x:-10906,y:-23349} },
   { callsign:'Speedbird-204', playerName:'CloudVector', aircraftType:'Boeing 787-9', altitude:18120, heading:74, speed:274, groundSpeed:191, isOnGround:false, isEmergencyOccuring:false, position:{x:8400,y:-9120} },
