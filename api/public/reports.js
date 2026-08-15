@@ -22,7 +22,10 @@ module.exports = async function handler(req, res) {
       votes:r.Votes || { atc:0, pilot:0, inconclusive:0, total:0 },
       communityVerdict:r.CommunityVerdict || { leader:'NO VOTES', percentage:0 }
     }));
-    res.setHeader('Cache-Control', 'no-store');
+
+    // This endpoint contains only sanitized public data. A short edge cache removes
+    // repeated Google Apps Script round-trips while keeping the archive fresh.
+    res.setHeader('Cache-Control', 'public, s-maxage=15, stale-while-revalidate=60');
     return res.status(200).json({ ok:true, reports });
   } catch (error) {
     console.error(error);
