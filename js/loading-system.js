@@ -2,11 +2,15 @@
 
 (function () {
   const nativeFetch = window.fetch.bind(window);
-  const activePageRequests = new Set();
+  const activePageRequests = new Map();
   const activeSectionRequests = new Map();
-  let overlayShownAt = 0;
-  let overlayTimer = null;
+  const activeBootRequests = new Set();
   const bootStartedAt = performance.now();
+  const PAGE_MIN_MS = 650;
+  const SECTION_MIN_MS = 450;
+  const BOOT_MIN_MS = 900;
+  let pageOverlay = null;
+  let pageOverlayStartedAt = 0;
 
   function currentRoute() {
     return String(location.hash || '#respond').replace(/^#/, '').toLowerCase();
@@ -29,20 +33,50 @@
     if (!url || url.origin !== location.origin) return null;
     const method = requestMethod(input, init);
     if (method !== 'GET') return null;
+
     const path = url.pathname;
     const action = url.searchParams.get('action') || '';
     const route = currentRoute();
 
-    if (path === '/api/public/reports') return { mode:'page', label:'Loading public reports', detail:'Retrieving the latest public 24PD cases.' };
-    if (path === '/api/public/report') return { mode:'page', label:'Loading case dossier', detail:'Retrieving case statements, evidence, and community data.' };
-    if (path === '/api/community' && action === 'stats') return { mode:'page', label:'Loading community statistics', detail:'Calculating current public activity and leaderboard totals.' };
-    if (path === '/api/community' && action === 'profile') return { mode:'page', label:'Loading your profile', detail:'Retrieving your Discord-backed 24PD account data.' };
-    if (path === '/api/community' && action === 'myCases') return { mode:'page', label:'Loading your cases', detail:'Retrieving reports associated with your account.' };
-    if (path === '/api/community' && action === 'myComments') return { mode:'page', label:'Loading your comments', detail:'Retrieving your public discussion history.' };
-    if (path === '/api/community' && action === 'moderationQueue') return { mode:'page', label:'Loading moderation queue', detail:'Retrieving comments currently awaiting review.' };
-    if (path === '/api/community' && action === 'comments') return { mode:'section', target:'#case-discussion', label:'Loading discussion' };
-    if (path === '/api/reports/lookup') return { mode:'section', target:'.phone-shell, .respond-shell, #app', label:'Locating report' };
-    if (path === '/api/aircraft' && route === 'aircraft') return { mode:'section', target:'.table-shell, #app', label:'Refreshing live aircraft' };
+    if (path === '/api/health') {
+      return { mode:'boot', label:'Connecting to 24PD services' };
+    }
+    if (path === '/api/public/reports') {
+      return { mode:'page', boot:true, label:'Loading public reports', detail:'Retrieving the latest public 24PD cases.' };
+    }
+    if (path === '/api/public/report') {
+      return { mode:'page', label:'Loading case dossier', detail:'Retrieving case statements, evidence, and community data.' };
+    }
+    if (path === '/api/community' && action === 'stats') {
+      return { mode:'page', label:'Loading community statistics', detail:'Calculating current public activity and leaderboard totals.' };
+    }
+    if (path === '/api/community' && action === 'profile') {
+      return { mode:'page', label:'Loading your profile', detail:'Retrieving your Discord-backed 24PD account data.' };
+    }
+    if (path === '/api/community' && action === 'myCases') {
+      return { mode:'page', label:'Loading your cases', detail:'Retrieving reports associated with your account.' };
+    }
+    if (path === '/api/community' && action === 'myComments') {
+      return { mode:'page', label:'Loading your comments', detail:'Retrieving your public discussion history.' };
+    }
+    if (path === '/api/community' && action === 'moderationQueue') {
+      return { mode:'page', label:'Loading moderation queue', detail:'Retrieving comments currently awaiting review.' };
+    }
+    if (path === '/api/community' && action === 'comments') {
+      return { mode:'section', target:'#case-discussion', label:'Loading discussion' };
+    }
+    if (path === '/api/reports/lookup') {
+      return { mode:'section', target:'.phone-shell, .respond-shell, #app', label:'Locating report' };
+    }
+    if (path === '/api/reports/status') {
+      return { mode:'section', target:'#controller-tracker, #app', label:'Refreshing case status' };
+    }
+    if (path === '/api/aircraft' && route === 'aircraft') {
+      return { mode:'section', target:'.table-shell, #app', label:'Refreshing live aircraft' };
+    }
+    if (path === '/api/auth/me' && !document.querySelector('#app > *')) {
+      return { mode:'boot', label:'Checking Discord session' };
+    }
     return null;
   }
 
@@ -54,37 +88,40 @@
   function ensurePageOverlay(label, detail) {
     const app = document.getElementById('app');
     if (!app) return;
-    let overlay = document.getElementById('data-fetch-overlay');
-    if (!overlay) {
-      overlay = document.createElement('div');
-      overlay.id = 'data-fetch-overlay';
-      overlay.className = 'data-fetch-overlay';
-      app.appendChild(overlay);
+    if (!pageOverlay || !pageOverlay.isConnected) {
+      pageOverlay = document.createElement('div');
+      pageOverlay.id = 'data-fetch-overlay';
+      pageOverlay.className = 'data-fetch-overlay';
+      app.appendChild(pageOverlay);
     }
-    overlay.classList.remove('is-leaving');
-    overlay.innerHTML = '<div class="data-fetch-overlay__panel">' + makeLoader(label, 'full') + '<small>' + String(detail || 'Retrieving 24PD data…') + '</small></div>';
-    overlayShownAt = performance.now();
+    pageOverlay.classList.remove('is-leaving');
+    pageOverlay.innerHTML = '<div class="data-fetch-overlay__panel">' + makeLoader(label, 'full') + '<small>' + String(detail || 'Retrieving 24PD data…') + '</small></div>';
+    pageOverlayStartedAt = performance.now();
   }
 
-  function schedulePageOverlay(label, detail) {
-    clearTimeout(overlayTimer);
-    overlayTimer = setTimeout(function () {
-      if (activePageRequests.size) ensurePageOverlay(label, detail);
-    }, 90);
-  }
-
-  function hidePageOverlay() {
-    if (activePageRequests.size) return;
-    clearTimeout(overlayTimer);
-    const overlay = document.getElementById('data-fetch-overlay');
-    if (!overlay) return;
-    const elapsed = performance.now() - overlayShownAt;
-    const wait = Math.max(0, 240 - elapsed);
+  function removePageOverlayWhenReady() {
+    if (activePageRequests.size || !pageOverlay?.isConnected) return;
+    const elapsed = performance.now() - pageOverlayStartedAt;
+    const wait = Math.max(0, PAGE_MIN_MS - elapsed);
     setTimeout(function () {
-      if (activePageRequests.size || !overlay.isConnected) return;
-      overlay.classList.add('is-leaving');
-      setTimeout(function () { overlay.remove(); }, 170);
+      if (activePageRequests.size || !pageOverlay?.isConnected) return;
+      pageOverlay.classList.add('is-leaving');
+      setTimeout(function () {
+        if (!activePageRequests.size && pageOverlay?.isConnected) pageOverlay.remove();
+      }, 180);
     }, wait);
+  }
+
+  function beginPageLoader(config) {
+    const token = Symbol('page-loader');
+    activePageRequests.set(token, performance.now());
+    ensurePageOverlay(config.label, config.detail);
+    return token;
+  }
+
+  function endPageLoader(token) {
+    activePageRequests.delete(token);
+    removePageOverlayWhenReady();
   }
 
   function beginSectionLoader(config) {
@@ -94,32 +131,50 @@
     const node = document.createElement('div');
     node.className = 'data-section-loader';
     node.innerHTML = makeLoader(config.label || 'Loading data', 'section');
-    if (target.firstChild) target.insertBefore(node, target.firstChild);
-    else target.appendChild(node);
-    activeSectionRequests.set(token, node);
+    target.prepend(node);
+    activeSectionRequests.set(token, { node, startedAt:performance.now() });
     return token;
   }
 
   function endSectionLoader(token) {
-    const node = activeSectionRequests.get(token);
+    const entry = activeSectionRequests.get(token);
     activeSectionRequests.delete(token);
-    if (node?.isConnected) node.remove();
+    if (!entry?.node) return;
+    const elapsed = performance.now() - entry.startedAt;
+    const wait = Math.max(0, SECTION_MIN_MS - elapsed);
+    setTimeout(function () {
+      if (entry.node.isConnected) {
+        entry.node.classList.add('is-leaving');
+        setTimeout(function () { if (entry.node.isConnected) entry.node.remove(); }, 150);
+      }
+    }, wait);
+  }
+
+  function beginBootRequest() {
+    const token = Symbol('boot-request');
+    activeBootRequests.add(token);
+    return token;
+  }
+
+  function endBootRequest(token) {
+    activeBootRequests.delete(token);
+    maybeDismissBootLoader();
   }
 
   function beginLoading(config) {
     if (!config) return null;
-    if (config.mode === 'section') return { mode:'section', token:beginSectionLoader(config) };
-    const token = Symbol('page-loader');
-    activePageRequests.add(token);
-    schedulePageOverlay(config.label, config.detail);
-    return { mode:'page', token };
+    const handle = { mode:config.mode, token:null, bootToken:null };
+    if (config.boot || config.mode === 'boot') handle.bootToken = beginBootRequest();
+    if (config.mode === 'page') handle.token = beginPageLoader(config);
+    else if (config.mode === 'section') handle.token = beginSectionLoader(config);
+    return handle;
   }
 
   function endLoading(handle) {
     if (!handle) return;
-    if (handle.mode === 'section') return endSectionLoader(handle.token);
-    activePageRequests.delete(handle.token);
-    hidePageOverlay();
+    if (handle.mode === 'page') endPageLoader(handle.token);
+    if (handle.mode === 'section') endSectionLoader(handle.token);
+    if (handle.bootToken) endBootRequest(handle.bootToken);
   }
 
   window.fetch = async function (input, init) {
@@ -158,11 +213,11 @@
     window.PPDUI?.enhance?.(actions);
   }
 
-  function rerunCurrentRoute(button, label) {
-    window.PPDUI?.setButtonLoading?.(button, label || 'REFRESHING…');
+  function rerunCurrentRoute(button, loadingText) {
+    window.PPDUI?.setButtonLoading?.(button, loadingText || 'REFRESHING…');
     setTimeout(function () {
       window.dispatchEvent(new HashChangeEvent('hashchange'));
-    }, 20);
+    }, 30);
   }
 
   function ensureRouteButtons() {
@@ -170,8 +225,8 @@
     if (route === 'reports') {
       addRefreshButton('reports-refresh', 'REFRESH REPORTS', function (button) {
         window.PPDUI?.setButtonLoading?.(button, 'REFRESHING…');
-        Promise.resolve(window.loadPublicReports?.()).catch(function () {
-          window.PPDUI?.restoreButton?.(button);
+        Promise.resolve(window.loadPublicReports?.()).finally(function () {
+          setTimeout(function () { window.PPDUI?.restoreButton?.(button); }, PAGE_MIN_MS);
         });
       });
       return;
@@ -200,21 +255,22 @@
     }, 0);
   }
 
-  function dismissBootLoader() {
+  function maybeDismissBootLoader() {
     const boot = document.getElementById('site-boot-loader');
     if (!boot || boot.dataset.dismissed === '1') return;
     const app = document.getElementById('app');
-    if (!app || !app.children.length) return;
-    const wait = Math.max(0, 420 - (performance.now() - bootStartedAt));
+    if (!app || !app.children.length || activeBootRequests.size) return;
+    const elapsed = performance.now() - bootStartedAt;
+    const wait = Math.max(0, BOOT_MIN_MS - elapsed);
     boot.dataset.dismissed = '1';
     setTimeout(function () {
       boot.classList.add('is-ready');
-      setTimeout(function () { boot.remove(); }, 240);
+      setTimeout(function () { if (boot.isConnected) boot.remove(); }, 260);
     }, wait);
   }
 
   const observer = new MutationObserver(function () {
-    dismissBootLoader();
+    maybeDismissBootLoader();
     ensureRouteButtons();
   });
 
@@ -229,7 +285,7 @@
   });
 
   window.addEventListener('load', function () {
-    dismissBootLoader();
+    maybeDismissBootLoader();
     ensureRouteButtons();
   });
 
@@ -238,10 +294,10 @@
     if (boot && boot.dataset.dismissed !== '1') {
       boot.dataset.dismissed = '1';
       boot.classList.add('is-ready');
-      setTimeout(function () { boot.remove(); }, 240);
+      setTimeout(function () { if (boot.isConnected) boot.remove(); }, 260);
     }
-  }, 8000);
+  }, 12000);
 
   ensureRouteButtons();
-  dismissBootLoader();
+  maybeDismissBootLoader();
 })();
